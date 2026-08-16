@@ -1,4 +1,4 @@
-# 五行行星日记 / Planet Diary
+# 行星日记 / Planet Diary
 
 <div align="center">
 
