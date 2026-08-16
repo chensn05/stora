@@ -5,7 +5,7 @@ export async function chatWithGuardian(
   userMessage: string,
   history: Array<{ role: string; content: string }> = []
 ): Promise<string> {
-  const r = await fetch('/api/chat', {
+  const r = await fetch('https://stora-production.up.railway.app/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
