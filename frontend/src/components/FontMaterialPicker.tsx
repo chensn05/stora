@@ -59,56 +59,9 @@ export function FontMaterialPicker({ onGenerated, onClose }: FontMaterialPickerP
 
     try {
       const prompt = PROMPT_TEMPLATES[selectedMaterial].replace('{text}', text.trim())
-      const res = await fetch('https://ai.devops.xiaohongshu.com/api/chatbot/v1/multi-modal/generateContent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          model: 'nano-banana-2',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          chatbot_key: 'Nano_Banana_2-Nano_Banana_2',
-          workspace_id: 0,
-          project_id: 0,
-        }),
-      })
-
-      if (!res.ok) {
-        setError('生成失败，请重试')
-        setGenerating(false)
-        return
-      }
-
-      const data = await res.json()
-      const contents = data?.contents || []
-      if (contents.length > 0) {
-        const parts = contents[0]?.parts || []
-        for (const part of parts) {
-          if (part.inlineData?.data) {
-            const b64 = part.inlineData.data
-            const url = `data:image/png;base64,${b64}`
-            setResultUrl(url)
-            setGenerating(false)
-            return
-          }
-          if (part.inlineData?.fileUuid) {
-            // Fetch by fileUuid
-            const fileResp = await fetch(
-              `https://ai.devops.xiaohongshu.com/api/chatbot/v1/file/get_file_base64_by_uuid_list?file_uuid=${part.inlineData.fileUuid}`,
-              { credentials: 'include' }
-            )
-            const fileData = await fileResp.json()
-            const b64 = fileData?.data?.[0]?.content || fileData?.file_list?.[0]?.content
-            if (b64) {
-              const url = `data:image/png;base64,${b64}`
-              setResultUrl(url)
-              setGenerating(false)
-              return
-            }
-          }
-        }
-      }
-      setError('生成失败，未返回图片')
+      setError('材质字体生成功能需要配置图像生成 API，暂未在开源版中启用')
       setGenerating(false)
+      return
     } catch (err: any) {
       setError(`生成失败：${err?.message?.slice(0, 40) || '未知错误'}`)
       setGenerating(false)
