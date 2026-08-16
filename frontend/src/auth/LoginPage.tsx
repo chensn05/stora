@@ -88,7 +88,7 @@ export default function LoginPage() {
           marginBottom: '8px',
           textShadow: '0 0 30px rgba(100, 150, 255, 0.6)',
         }}>
-          五行行星日记
+          Stora
         </h1>
         <p style={{
           color: '#8899bb',
