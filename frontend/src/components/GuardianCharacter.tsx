@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { GUARDIAN_IMAGES, GUARDIAN_NAMES, getRandomDialogue } from '../data/guardians'
 import { chatWithGuardian } from '../guardian-chat'
+import { guardianSize, chatPanelWidth, chatPanelHeight, isSmallMobile } from '../utils/responsive'
 
 interface ChatMsg {
   role: 'user' | 'assistant'
@@ -81,8 +82,8 @@ export function GuardianCharacter({
       {/* Chat panel */}
       {chatOpen && (
         <div style={{
-          width: '320px',
-          height: '420px',
+          width: chatPanelWidth(),
+          height: chatPanelHeight(),
           background: 'rgba(15,15,35,0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '16px',
@@ -276,8 +277,8 @@ export function GuardianCharacter({
       <div
         onClick={() => chatOpen ? setChatOpen(false) : handleOpenChat()}
         style={{
-          width: '140px',
-          height: '140px',
+          width: guardianSize(),
+          height: guardianSize(),
           cursor: 'pointer',
           position: 'relative',
           animation: 'guardianFloat 3s ease-in-out infinite',
