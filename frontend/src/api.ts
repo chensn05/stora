@@ -1,7 +1,9 @@
 const getToken = () => localStorage.getItem('sb_token') || ''
 
+const API_BASE = 'https://stora-production.up.railway.app'
+
 const apiFetch = async (path: string, init?: RequestInit) => {
-  const r = await fetch(`/api${path}`, {
+  const r = await fetch(`${API_BASE}/api${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -10,7 +12,7 @@ const apiFetch = async (path: string, init?: RequestInit) => {
     },
   })
   if (r.status === 401) {
-    window.location.href = '/login'
+    // Not logged in — don't reload, just return null so LoginPage shows
     return null
   }
   return r.json()
