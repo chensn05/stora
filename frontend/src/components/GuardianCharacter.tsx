@@ -73,7 +73,8 @@ export function GuardianCharacter({
     <div style={{
       position: 'absolute',
       bottom: '20px',
-      left: '20px',
+      right: '20px',
+      left: 'auto',
       display: 'flex',
       alignItems: 'flex-end',
       gap: '12px',
