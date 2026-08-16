@@ -26,6 +26,10 @@ export default function App() {
     
     api.whoami().then((u) => {
       if (u) setUser(u)
+      else {
+        localStorage.removeItem('sb_token')
+        setAuthenticated(false)
+      }
       setLoading(false)
     }).catch(() => {
       localStorage.removeItem('sb_token')
