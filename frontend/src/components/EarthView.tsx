@@ -8,6 +8,7 @@ import type { Balance, FeedItem } from '../types'
 import { Guardian } from './Guardian'
 import { GuardianCharacter } from './GuardianCharacter'
 import { generatePlanetTexture, generateStarField } from '../utils/textures'
+import { useStackedLayout } from '../utils/responsive'
 
 /** Earth 3D sphere. */
 function EarthSphere() {
@@ -352,9 +353,9 @@ export default function EarthView({
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', background: '#000010' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: useStackedLayout() ? 'column' : 'row', background: '#000010' }}>
       {/* 3D Earth - left */}
-      <div style={{ flex: '1 1 40%', position: 'relative' }}>
+      <div style={{ flex: useStackedLayout() ? '1 1 35%' : '1 1 40%', position: 'relative' }}>
         <Canvas camera={{ position: [0, 1, 7], fov: 45 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
           <color attach="background" args={['#000010']} />
           <ambientLight intensity={0.15} />
