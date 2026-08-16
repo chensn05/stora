@@ -10,6 +10,7 @@ import { DiaryEditor } from './DiaryEditor'
 import { GuardianCharacter } from './GuardianCharacter'
 import { PlanetLife, type LifeEntity } from './PlanetLife'
 import { generatePlanetTexture, generateRingTexture } from '../utils/textures'
+import { useStackedLayout, guardianSize, chatPanelWidth, chatPanelHeight } from '../utils/responsive'
 
 /** 3D planet close-up view with auto-rotation. */
 function PlanetSphere({ planetId, diaryTitles }: { planetId: string; diaryTitles: { id: number; title: string }[] }) {
@@ -162,9 +163,9 @@ export default function PlanetView({
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', background: '#000010' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: useStackedLayout() ? 'column' : 'row', background: '#000010' }}>
       {/* 3D planet view - left side */}
-      <div style={{ flex: '1 1 50%', position: 'relative' }}>
+      <div style={{ flex: useStackedLayout() ? '1 1 40%' : '1 1 50%', position: 'relative' }}>
         <Canvas camera={{ position: [0, 1, 7], fov: 45 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
           <color attach="background" args={['#000010']} />
           <ambientLight intensity={0.15} />
@@ -278,8 +279,8 @@ export default function PlanetView({
 
       {/* diary list - right side */}
       <div style={{
-        flex: '1 1 50%',
-        padding: '24px',
+        flex: useStackedLayout() ? '1 1 60%' : '1 1 50%',
+        padding: useStackedLayout() ? '16px' : '24px',
         overflowY: 'auto',
         background: 'rgba(10,10,30,0.8)',
         backdropFilter: 'blur(20px)',
