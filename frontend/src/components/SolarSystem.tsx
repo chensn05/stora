@@ -7,6 +7,7 @@ import type { PlanetConfig } from '../types'
 import { Guardian } from './Guardian'
 import { generatePlanetTexture, generateRingTexture, generateStarField } from '../utils/textures'
 import { FontMaterialPicker } from './FontMaterialPicker'
+import { titleFontSize, titleLetterSpacing } from '../utils/responsive'
 
 const starFieldTex = typeof window !== 'undefined' ? generateStarField() : null
 
@@ -266,19 +267,15 @@ export default function SolarSystem({ onSelect }: { onSelect: (planetId: string)
         pointerEvents: 'none',
         textAlign: 'center',
       }}>
-        <h1 style={{
+        <h1 className="stora-title" style={{
           color: '#fff',
-          fontSize: '56px',
+          fontSize: titleFontSize(),
           fontWeight: 400,
-          letterSpacing: '12px',
-          textShadow: [
-            '0 0 4px rgba(255,255,255,0.5)',
-            '0 0 16px rgba(100,180,255,0.5)',
-            '0 0 48px rgba(80,120,220,0.3)',
-          ].join(', '),
+          letterSpacing: titleLetterSpacing(),
+          textShadow: '0 0 12px rgba(100,180,255,0.5)',
           margin: 0,
           fontFamily: '"Ma Shan Zheng", cursive',
-          paddingLeft: '8px',
+          paddingLeft: '4px',
         }}>
           {titleImageUrl ? (
             <img src={titleImageUrl} alt="Stora" style={{ maxHeight: '72px', verticalAlign: 'middle', filter: 'drop-shadow(0 0 20px rgba(100,150,255,0.5))' }} />
@@ -287,7 +284,7 @@ export default function SolarSystem({ onSelect }: { onSelect: (planetId: string)
           )}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
-          <p style={{
+          <p className="stora-subtitle" style={{
             color: '#778899',
             fontSize: '14px',
             letterSpacing: '3px',
@@ -297,7 +294,7 @@ export default function SolarSystem({ onSelect }: { onSelect: (planetId: string)
             点击行星 · 记录此刻的你
           </p>
           <button
-            onClick={() => setFontPickerOpen(true)}
+            className="stora-material-btn" onClick={() => setFontPickerOpen(true)}
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.12)',
@@ -318,7 +315,7 @@ export default function SolarSystem({ onSelect }: { onSelect: (planetId: string)
       {/* planet legend with popup */}
       <div style={{
         position: 'absolute',
-        bottom: '24px',
+        bottom: "24px",
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
@@ -441,7 +438,7 @@ export default function SolarSystem({ onSelect }: { onSelect: (planetId: string)
                   </span>
                 </div>
 
-                <p style={{
+                <p className="stora-subtitle" style={{
                   fontSize: '13px',
                   color: '#99aabb',
                   lineHeight: 1.6,
