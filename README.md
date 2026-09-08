@@ -1,4 +1,4 @@
-# 行星日记 / Planet Diary
+# 五行行星日记 / Planet Diary
 
 <div align="center">
 
@@ -174,6 +174,12 @@ vercel --prod
 ### 📄 开源协议
 
 MIT License
+
+### 🙏 素材版权
+
+- 行星与太阳纹理来自 [Solar System Scope](https://www.solarsystemscope.com/textures/)，采用 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 许可协议使用
+- 字体：Ma Shan Zheng / Liu Jian Mao Cao（Google Fonts, SIL OFL）
+- 字体材质图生成使用 [pollinations.ai](https://pollinations.ai) 公共图像生成服务
 
 ---
 
