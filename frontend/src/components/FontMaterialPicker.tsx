@@ -59,9 +59,22 @@ export function FontMaterialPicker({ onGenerated, onClose }: FontMaterialPickerP
 
     try {
       const prompt = PROMPT_TEMPLATES[selectedMaterial].replace('{text}', text.trim())
-      setError('材质字体生成功能需要配置图像生成 API，暂未在开源版中启用')
+      // free public image generation API (pollinations.ai), no API key needed
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 999999)}`
+
+      // pre-load the image to detect failure
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('图像生成服务暂不可用'))
+        img.src = url
+        // generous timeout for generation
+        setTimeout(() => reject(new Error('生成超时，请重试')), 90000)
+      })
+
+      setResultUrl(url)
       setGenerating(false)
-      return
     } catch (err: any) {
       setError(`生成失败：${err?.message?.slice(0, 40) || '未知错误'}`)
       setGenerating(false)
