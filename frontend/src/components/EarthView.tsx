@@ -7,6 +7,7 @@ import { api } from '../api'
 import type { Balance, FeedItem } from '../types'
 import { Guardian } from './Guardian'
 import { GuardianCharacter } from './GuardianCharacter'
+import { FiveElementsCycle } from './FiveElementsCycle'
 import { generatePlanetTexture, generateStarField } from '../utils/textures'
 import { useStackedLayout } from '../utils/responsive'
 
@@ -539,6 +540,7 @@ export default function EarthView({
         {/* balance tab */}
         {activeTab === 'balance' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <FiveElementsCycle balance={balance} />
             <BalanceChart balance={balance} />
             {/* planet quick links */}
             <div style={{
