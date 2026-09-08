@@ -84,12 +84,30 @@ export function generateLifeEntities(
 /** A single 3D life entity on planet surface */
 function LifeMesh({ entity, onClick }: { entity: LifeEntity; onClick: (e: LifeEntity) => void }) {
   const ref = useRef<THREE.Group>(null)
+  const bornAt = useRef<number | null>(null)
 
   useFrame(({ clock }) => {
     if (!ref.current) return
     const t = clock.getElapsedTime()
-    // Gentle sway
-    ref.current.rotation.z = Math.sin(t * 0.5 + entity.id) * 0.03
+    if (bornAt.current === null) bornAt.current = t
+    const age = t - bornAt.current
+
+    // Growth animation: scale from 0 with overshoot bounce
+    let grow = 1
+    if (age < 1.2) {
+      const p = age / 1.2
+      // easeOutBack
+      const c1 = 1.70158
+      const c3 = c1 + 1
+      grow = 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2)
+      if (p < 0) grow = 0
+    }
+    ref.current.scale.setScalar(Math.max(0.001, entity.scale * grow))
+
+    // Gentle sway after grown
+    if (age >= 1.2) {
+      ref.current.rotation.z = entity.rotation[2] + Math.sin(t * 0.5 + entity.id) * 0.03
+    }
     // Animals bob up and down
     if (entity.type === 'animal') {
       ref.current.position.y = entity.position[1] + Math.sin(t * 1.5 + entity.id) * 0.02
