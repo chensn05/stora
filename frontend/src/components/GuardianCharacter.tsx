@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { GUARDIAN_IMAGES, GUARDIAN_NAMES, getRandomDialogue } from '../data/guardians'
+import { GUARDIAN_IMAGES, GUARDIAN_NAMES, getRandomDialogue, getDataGreeting } from '../data/guardians'
 import { chatWithGuardian } from '../guardian-chat'
-import { guardianSize, chatPanelWidth, chatPanelHeight, isSmallMobile } from '../utils/responsive'
+import { guardianSize, chatPanelWidth, chatPanelHeight } from '../utils/responsive'
+import { api } from '../api'
 
 interface ChatMsg {
   role: 'user' | 'assistant'
@@ -26,14 +27,26 @@ export function GuardianCharacter({
   const [loading, setLoading] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
+  const [stats, setStats] = useState<{ counts: Record<string, number>; total: number } | null>(null)
+
   const img = GUARDIAN_IMAGES[planetId]
   const name = GUARDIAN_NAMES[planetId]
 
+  // load diary stats for data-driven greeting
   useEffect(() => {
-    setDialogue(getRandomDialogue(planetId))
+    api.getBalance().then((b) => {
+      if (b?.counts) setStats({ counts: b.counts, total: b.total || 0 })
+    }).catch(() => {})
+  }, [planetId])
+
+  useEffect(() => {
+    const greeting = stats
+      ? getDataGreeting(planetId, stats.counts, stats.total)
+      : getRandomDialogue(planetId)
+    setDialogue(greeting)
     const timer = setTimeout(() => setShowBubble(true), 500)
     return () => clearTimeout(timer)
-  }, [planetId])
+  }, [planetId, stats])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -71,14 +84,14 @@ export function GuardianCharacter({
 
   return (
     <div style={{
-      position: 'absolute',
-      bottom: '20px',
+      position: 'fixed',
+      bottom: 'calc(20px + env(safe-area-inset-bottom))',
       right: '20px',
       left: 'auto',
       display: 'flex',
       alignItems: 'flex-end',
       gap: '12px',
-      zIndex: 10,
+      zIndex: 100,
     }}>
       {/* Chat panel */}
       {chatOpen && (
