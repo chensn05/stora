@@ -1,6 +1,7 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { PLANET_MAP } from '../data/planets'
 import { api } from '../api'
@@ -9,31 +10,83 @@ import { Guardian } from './Guardian'
 import { DiaryEditor } from './DiaryEditor'
 import { GuardianCharacter } from './GuardianCharacter'
 import { PlanetLife, type LifeEntity } from './PlanetLife'
-import { generatePlanetTexture, generateRingTexture } from '../utils/textures'
-import { useStackedLayout, guardianSize, chatPanelWidth, chatPanelHeight } from '../utils/responsive'
+import { generateRingTexture } from '../utils/textures'
+import { useStackedLayout } from '../utils/responsive'
 
-/** 3D planet close-up view with auto-rotation. */
+const texLoader = new THREE.TextureLoader()
+
+const PLANET_TEX: Record<string, string> = {
+  mercury: '/textures/2k_mercury.jpg',
+  venus: '/textures/2k_venus_surface.jpg',
+  earth: '/textures/2k_earth_daymap.jpg',
+  mars: '/textures/2k_mars.jpg',
+  jupiter: '/textures/2k_jupiter.jpg',
+  saturn: '/textures/2k_saturn.jpg',
+}
+
+const atmoVert = /* glsl */ `
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vViewDir = normalize(-mv.xyz);
+    gl_Position = projectionMatrix * mv;
+  }
+`
+const atmoFrag = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uIntensity;
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  void main() {
+    float f = pow(1.0 - abs(dot(normalize(vViewDir), normalize(vNormal))), 2.5);
+    gl_FragColor = vec4(uColor * f * uIntensity, f * 0.5 * uIntensity);
+  }
+`
+
+function AtmosphereGlow({ color, size, intensity = 1.0 }: { color: string; size: number; intensity?: number }) {
+  const uniforms = useMemo(() => ({
+    uColor: { value: new THREE.Color(color) },
+    uIntensity: { value: intensity },
+  }), [color, intensity])
+  return (
+    <mesh scale={1.1}>
+      <sphereGeometry args={[size, 32, 32]} />
+      <shaderMaterial
+        vertexShader={atmoVert}
+        fragmentShader={atmoFrag}
+        uniforms={uniforms}
+        transparent
+        side={THREE.BackSide}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </mesh>
+  )
+}
+
+/** 3D planet close-up with real texture + rotation */
 function PlanetSphere({ planetId, diaryTitles }: { planetId: string; diaryTitles: { id: number; title: string }[] }) {
   const config = PLANET_MAP[planetId]
   const meshRef = useRef<THREE.Mesh>(null)
-  
-  const texture = useMemo(
-    () => generatePlanetTexture({
-      baseColor: config.color,
-      glowColor: config.glowColor,
-      type: config.textureType,
-      seed: config.id.charCodeAt(0) * 100,
-    }),
-    [config]
-  )
+
+  const texture = useMemo(() => {
+    const url = PLANET_TEX[planetId]
+    if (!url) return null
+    const t = texLoader.load(url)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    return t
+  }, [planetId])
 
   const ringTexture = useMemo(
-    () => config.hasRing ? generateRingTexture(config.color, config.glowColor) : null,
+    () => config.hasRing ? texLoader.load('/textures/2k_saturn_ring_alpha.png') : null,
     [config]
   )
 
-  useFrame(({ clock }) => {
-    if (meshRef.current) meshRef.current.rotation.y += 0.003
+  useFrame(() => {
+    if (meshRef.current) meshRef.current.rotation.y += 0.002
   })
 
   if (!config) return null
@@ -41,65 +94,45 @@ function PlanetSphere({ planetId, diaryTitles }: { planetId: string; diaryTitles
   return (
     <group>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[2, 128, 128]} />
+        <sphereGeometry args={[2, 96, 96]} />
         <meshStandardMaterial
-          map={texture}
-          emissive={config.glowColor}
-          emissiveIntensity={0.2}
-          roughness={config.textureType === 'gas' ? 0.3 : 0.8}
-          metalness={0.2}
+          map={texture || undefined}
+          color={texture ? '#ffffff' : config.color}
+          roughness={0.85}
+          metalness={0.05}
         />
       </mesh>
 
-      {/* atmospheric glow */}
-      <mesh scale={1.08}>
-        <sphereGeometry args={[2, 32, 32]} />
-        <meshBasicMaterial
-          color={config.glowColor}
-          transparent
-          opacity={0.12}
-          side={THREE.BackSide}
-        />
-      </mesh>
-      <mesh scale={1.2}>
-        <sphereGeometry args={[2, 16, 16]} />
-        <meshBasicMaterial
-          color={config.glowColor}
-          transparent
-          opacity={0.06}
-          side={THREE.BackSide}
-        />
-      </mesh>
+      <AtmosphereGlow color={config.glowColor} size={2} intensity={0.8} />
+      <AtmosphereGlow color={config.glowColor} size={2.15} intensity={0.3} />
 
-      {/* saturn ring */}
       {config.hasRing && ringTexture && (
-        <mesh rotation={[Math.PI / 2.3, 0, 0]}>
-          <ringGeometry args={[2.8, 4.5, 128]} />
+        <mesh rotation={[Math.PI / 2.25, 0.1, 0]}>
+          <ringGeometry args={[2.5, 4.4, 128]} />
           <meshBasicMaterial
             map={ringTexture}
             transparent
-            opacity={0.8}
+            opacity={0.95}
             side={THREE.DoubleSide}
+            depthWrite={false}
           />
         </mesh>
       )}
 
-      {/* guardian */}
-      <Guardian planet={config} position={[2.3, 1, 0.5]} />
-      {/* Life entities on planet surface */}
+      {/* life entities on surface */}
       <PlanetLife
         planetId={planetId}
         diaryCount={diaryTitles.length}
         radius={2}
         diaryTitles={diaryTitles}
-        onSelectEntity={(e) => {
-          // dispatch custom event for UI to catch
+        onSelectEntity={(e: LifeEntity) => {
           window.dispatchEvent(new CustomEvent('lifeEntityClick', { detail: e }))
         }}
       />
     </group>
   )
 }
+
 export default function PlanetView({
   planetId,
   onBack,
@@ -112,6 +145,7 @@ export default function PlanetView({
   const [showEditor, setShowEditor] = useState(false)
   const [loading, setLoading] = useState(true)
   const [selectedEntity, setSelectedEntity] = useState<any>(null)
+  const stacked = useStackedLayout()
 
   useEffect(() => {
     const handler = (e: any) => setSelectedEntity(e.detail)
@@ -139,22 +173,10 @@ export default function PlanetView({
     visibility: string
   }) => {
     try {
-      const res = await api.createDiary({
-        planet: planetId,
-        ...data,
-      })
-      if (res?.id || res?.ok) {
-        setShowEditor(false)
-        await loadDiaries()
-      } else {
-        // Even if response is unclear, try refreshing
-        setShowEditor(false)
-        await loadDiaries()
-      }
-    } catch (e) {
-      setShowEditor(false)
-      await loadDiaries()
-    }
+      await api.createDiary({ planet: planetId, ...data })
+    } catch {}
+    setShowEditor(false)
+    await loadDiaries()
   }
 
   const handleDelete = async (id: number) => {
@@ -163,15 +185,19 @@ export default function PlanetView({
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: useStackedLayout() ? 'column' : 'row', background: '#000010' }}>
-      {/* 3D planet view - left side */}
-      <div style={{ flex: useStackedLayout() ? '1 1 40%' : '1 1 50%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: stacked ? 'column' : 'row', background: '#000010' }}>
+      {/* 3D planet view */}
+      <div style={{ flex: stacked ? '1 1 40%' : '1 1 50%', position: 'relative', minHeight: stacked ? '40%' : undefined }}>
         <Canvas camera={{ position: [0, 1, 7], fov: 45 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
           <color attach="background" args={['#000010']} />
-          <ambientLight intensity={0.15} />
-          <pointLight position={[5, 5, 5]} intensity={1.5} color={config.glowColor} />
+          <ambientLight intensity={0.12} />
+          <pointLight position={[6, 4, 5]} intensity={2} color="#ffe8cc" />
+          <pointLight position={[-5, -2, -4]} intensity={0.4} color={config.glowColor} />
           <PlanetSphere planetId={planetId} diaryTitles={diaries.map(d => ({ id: d.id, title: d.title || d.content.slice(0, 20) }))} />
-          <OrbitControls enablePan={false} minDistance={4} maxDistance={12} autoRotate autoRotateSpeed={0.3} />
+          <OrbitControls enablePan={false} minDistance={3.5} maxDistance={12} autoRotate autoRotateSpeed={0.3} />
+          <EffectComposer>
+            <Bloom intensity={0.4} luminanceThreshold={0.2} luminanceSmoothing={0.85} mipmapBlur />
+          </EffectComposer>
         </Canvas>
 
         {/* planet info overlay */}
@@ -190,7 +216,7 @@ export default function PlanetView({
               background: config.color,
               boxShadow: `0 0 12px ${config.glowColor}`,
             }} />
-            <h2 style={{ margin: 0, fontSize: '44px', fontWeight: 400, letterSpacing: '4px', fontFamily: '"Ma Shan Zheng", cursive', textShadow: '0 0 16px rgba(100,150,255,0.4)' }}>{config.name}</h2>
+            <h2 style={{ margin: 0, fontSize: '36px', fontWeight: 400, fontFamily: '"Ma Shan Zheng", cursive', textShadow: '0 0 16px rgba(100,150,255,0.4)' }}>{config.name}</h2>
           </div>
           <div style={{ marginTop: '8px', fontSize: '14px', color: '#8899bb' }}>
             <span style={{ color: config.guideColor }}>「{config.elementName}」</span>
@@ -277,10 +303,10 @@ export default function PlanetView({
         `}</style>
       </div>
 
-      {/* diary list - right side */}
+      {/* diary list */}
       <div style={{
-        flex: useStackedLayout() ? '1 1 60%' : '1 1 50%',
-        padding: useStackedLayout() ? '16px' : '24px',
+        flex: stacked ? '1 1 60%' : '1 1 50%',
+        padding: stacked ? '16px' : '24px',
         overflowY: 'auto',
         background: 'rgba(10,10,30,0.8)',
         backdropFilter: 'blur(20px)',
